@@ -51,7 +51,7 @@ public class SimulatedAnnealing extends AcceptanceCriterion {
             reduceTemperature();
         }
         if(numberOfIterationsStuck == Vars.iterMax){
-            System.out.println("Resetou!");
+           // System.out.println("Resetou!");
             resetCoolingSchedule();
             numberOfIterationsStuck = 0;
             Vars.numberOfRestarts++;

@@ -14,7 +14,9 @@ import BinPacking.BinPacking;
 import SAT.SAT;
 import VRP.VRP;
 import FlowShop.FlowShop;
-import PersonnelScheduling.PersonnelScheduling;
+import PDP.HPModel;
+import PDP.PDP;
+//import PersonnelScheduling.PersonnelScheduling;
 import java.text.DecimalFormat;
 import travelingSalesmanProblem.TSP;
 import util.Vars;
@@ -35,9 +37,9 @@ public class Main {
         int instance = 7;
         //long seed = 1234;
         long seed = System.currentTimeMillis();
-        int acc = 0;
+        int acc = 4;
         //double scalingFactor = 10.0;
-        problem = new BinPacking(seed);
+        problem = new PDP(seed, HPModel.TWO_DIMENSIONAL, 1, 3);
         if (args.length == 1) {
             // problem = getProblem(args[0], seed)1
         } else if (args.length == 3) {
@@ -96,8 +98,8 @@ public class Main {
             return new TSP(seed);
         } else if (problem.equals("MAXSAT")) {
             return new SAT(seed);
-        } else if (problem.equals("PersonnelScheduling")) {
-            return new PersonnelScheduling(seed);
+        //} else if (problem.equals("PersonnelScheduling")) {
+          //  return new PersonnelScheduling(seed);
         } else if (problem.equals("VRP")) {
             return new VRP(seed);
         } else if (problem.equals("FlowShop")) {

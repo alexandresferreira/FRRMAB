@@ -287,7 +287,7 @@ public class MABHH extends HyperHeuristic {
 
             if (numberOfIterations == 15) {
                 endTime = System.currentTimeMillis() - startTime;
-                Vars.iterMax = Vars.totalExecutionTime / endTime;
+                //Vars.iterMax = Vars.totalExecutionTime / endTime;
                 System.out.println("IterMAx: " + Vars.iterMax);
                 acceptance.setBeta();
                 Vars.reduceTemperature = true;

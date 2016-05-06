@@ -31,7 +31,7 @@ public class Vars implements Serializable {
      */
     public static long totalExecutionTime = 480000;
     
-    public static int mabType = 2;
+    public static int mabType = 1;
     /**
      * The number of trials for solving each problem instance *
      */
@@ -42,16 +42,16 @@ public class Vars implements Serializable {
 
     public static long limitOfIterationsStuck = 90000;
 
-    public static long iterMax;
+    public static long iterMax = 200;
 
     public static int numberOfRestarts = 0;
 
     public static boolean setWSize = true;
 
     // windowsize
-    public static double windowSize = 100;
+    public static double windowSize = 500;
     //Scaling Factor Autoupdate parameters
-    public static double scalingFactor = 8;
+    public static double scalingFactor = 0.0001;
     public static double scalingUpperBound = 1.0;
     public static double scalingLowerBound = 0.1;
     public static double incrementScaling = 0.1;
