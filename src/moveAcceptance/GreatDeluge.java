@@ -33,7 +33,6 @@ public class GreatDeluge extends AcceptanceCriterion {
 
         } //accept equal
         else if (newFitness == currentFitness) {
-
             acp = true;
             this.numberOfIterationsStuck++;
         } //worsen

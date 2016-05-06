@@ -1,10 +1,10 @@
 run: clean compile exec
 
 compile:
-	javac  -cp chesc.jar -d build/ src/*/*.java
+	javac  -cp hypdp-0.0.1-SNAPSHOT-jar-with-dependencies.jar -d build/ src/*/*.java
 			
 exec:
-	java -cp chesc.jar:build main.Main
+	java -cp hypdp-0.0.1-SNAPSHOT-jar-with-dependencies.jar:build main.Main
 				
 clean:
 	rm -rf build/*

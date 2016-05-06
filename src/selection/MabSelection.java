@@ -139,7 +139,7 @@ public abstract class MabSelection extends SelectionMethod {
     @Override
     public void updateLevelOfChange(LevelOfChangeType lcType, HeuristicClassType hClassType, int heurIndex) {
         double learningRateLevel = 1.0;
-        if (Vars.oscilateLOCValues && Vars.isAtStuck && !Vars.restartSearch) {
+        if (Vars.oscilateLOCValues && Vars.isAtStuck) {
 
             if (hClassType == HeuristicClassType.OnlyImproving) { // >= 0.5
                 if (!directionChangeForHighLOC) {
@@ -194,9 +194,9 @@ public abstract class MabSelection extends SelectionMethod {
                 } else if (hClassType == HeuristicClassType.ImprovingMoreOrEqual) {
                     double tempProb = r.nextDouble();
                     if (tempProb <= 0.5) {
-                        plusMinusZero = 1.0;   //increase 
+                        plusMinusZero = 1.0;   //increase
                     } else if (tempProb <= 0.75) {
-                        plusMinusZero = -1.0;  //decrease 
+                        plusMinusZero = -1.0;  //decrease
                     } else {
                         plusMinusZero = 0.0;   //no change
                     }
@@ -371,8 +371,8 @@ public abstract class MabSelection extends SelectionMethod {
         this.last = last;
     }
 
-    
-    
+
+
     @Override
     public double[] getLevelOfChangeList() {
         return levelOfChangeList;

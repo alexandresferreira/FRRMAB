@@ -16,7 +16,7 @@ public class Adaptative extends AcceptanceCriterion {
 
     private double adaptativeRate = 0;
     private int nIterationsToUpdate = 50;
-    
+
     public Adaptative(Random r) {
         super(r);
     }
@@ -45,13 +45,8 @@ public class Adaptative extends AcceptanceCriterion {
              double rnd = r.nextDouble();
              if (rnd < adaptativeRate) {
                 acp = true;
-                //decreases rate
                 adaptativeRate = 0;
-                //if(adaptativeRate < 0){
-                 //   adaptativeRate = 0;
-                //}
             }
-            //this.numberOfIterationsStuck++;
         }
 
         return acp;

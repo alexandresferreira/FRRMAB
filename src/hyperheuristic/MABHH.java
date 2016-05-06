@@ -4,12 +4,10 @@ import AbstractClasses.HyperHeuristic;
 import AbstractClasses.ProblemDomain;
 import AbstractClasses.ProblemDomain.HeuristicType;
 import analysis.PerformanceElements;
-import be.kuleuven.kahosl.util.Print;
 import java.text.DecimalFormat;
 import java.util.concurrent.TimeUnit;
 import moveAcceptance.AcceptanceCriterion;
 import moveAcceptance.Adaptative;
-import moveAcceptance.AdaptiveIterationLimitedListBasedTA;
 import moveAcceptance.AllMoves;
 import moveAcceptance.BetterEqual;
 import moveAcceptance.ExponentialMonteCarlo;
@@ -21,11 +19,10 @@ import moveAcceptance.SimulatedAnnealing;
 import selection.FRRMAB;
 import selection.SelectionMethod;
 import selection.MabSelection;
-import selection.SLFRMAB;
+import selection.FRAMAB;
 import selection.SLMAB;
 import util.Vars;
 
-@SuppressWarnings("unused")
 public class MABHH extends HyperHeuristic {
 
     private int numberOfHeuristics;
@@ -96,11 +93,10 @@ public class MABHH extends HyperHeuristic {
     }
 
     private void initializeHeuristicSelection() {
-        Vars.calculateDHSParams(numberOfHeuristics, Vars.PLFactor);
         switch(Vars.mabType){
             case 1:
-                System.out.println("Selection: SLFRMAB");
-                selection = new SLFRMAB(numberOfHeuristics, this.scalingFactor, rng);
+                System.out.println("Selection: FRAMAB");
+                selection = new FRAMAB(numberOfHeuristics, this.scalingFactor, rng);
                 break;
             case 2:
                 System.out.println("Selection: FRRMAB");
@@ -110,7 +106,7 @@ public class MABHH extends HyperHeuristic {
                 System.out.println("Selection: SLMAB");
                 selection = new SLMAB(numberOfHeuristics, this.scalingFactor, rng);
         }
-        
+
     }
 
     private void initializeMoveAcceptance() {
@@ -153,59 +149,29 @@ public class MABHH extends HyperHeuristic {
         }
     }
 
-    private void setHeuristicTypes(ProblemDomain problem) {
-        local_search_heuristics = problem.getHeuristicsOfType(ProblemDomain.HeuristicType.LOCAL_SEARCH);
-        mutation_heuristics = problem.getHeuristicsOfType(ProblemDomain.HeuristicType.MUTATION);
-        ruin_recreate_heuristics = problem.getHeuristicsOfType(ProblemDomain.HeuristicType.RUIN_RECREATE);
-        crossover_heuristics = problem.getHeuristicsOfType(ProblemDomain.HeuristicType.CROSSOVER);
-
-        for (int i = 0; i < local_search_heuristics.length; i++) {
-            heuristicTypeList[local_search_heuristics[i]] = HeuristicType.LOCAL_SEARCH;
-            heuristicClassTypeList[local_search_heuristics[i]] = HeuristicClassType.ImprovingMoreOrEqual;
-        }
-        for (int i = 0; i < mutation_heuristics.length; i++) {
-            heuristicTypeList[mutation_heuristics[i]] = HeuristicType.MUTATION;
-            heuristicClassTypeList[mutation_heuristics[i]] = HeuristicClassType.ImprovingMoreOrEqual;
-        }
-        for (int i = 0; i < ruin_recreate_heuristics.length; i++) {
-            heuristicTypeList[ruin_recreate_heuristics[i]] = HeuristicType.RUIN_RECREATE;
-            heuristicClassTypeList[ruin_recreate_heuristics[i]] = HeuristicClassType.ImprovingMoreOrEqual;
-        }
-        for (int i = 0; i < crossover_heuristics.length; i++) {
-            heuristicTypeList[crossover_heuristics[i]] = HeuristicType.CROSSOVER;
-            heuristicClassTypeList[crossover_heuristics[i]] = HeuristicClassType.ImprovingMoreOrEqual;
-        }
-    }
-
-    private boolean isCrossover(int heurIndex) {
-        boolean isCrossover = false;
-        for (int cr = 0; cr < crossover_heuristics.length; cr++) {
-            if (crossover_heuristics[cr] == heurIndex) {
-                isCrossover = true;
-                break;
-            }
-        }
-        return isCrossover;
-    }
-
     @Override
     protected void solve(ProblemDomain problem) {
         DecimalFormat fmt = new DecimalFormat("0.00");
+        /*Set the problem */
         setHeuristicTypes(problem);
+        /*Define the number of solutions on memory to 12 (default 2)*/
         problem.setMemorySize(12);
         long endTime;
         int auxNumberIt = 0;
+        /*Start and end time of a low-level heuristic's application*/
         long startHeur, endHeur;
+        /*Initialize Solution*/
         problem.initialiseSolution(0);
+        /*Save the initial solution in the 10th position of the memory*/
         problem.copySolution(0, 10);
-        //System.out.println("Tamanho da Window: " + selection.getWindowSize());
-        System.out.println("Solução inicial: " + problem.getFunctionValue(0));
+        System.out.println("Initial Solution: " + problem.getFunctionValue(0));
+        /*Initialize the best, curr and new fitness as the initial solution*/
         bestFitness = currentFitness = newFitness = problem.getFunctionValue(0);
         acceptance.resetAcceptanceList(bestFitness);
         acceptance.setInitialLevel(problem.getFunctionValue(0));
-        /* 
-         * Take a number of copies of the initial solution for using 
-         * the crossover operators (or any operator requiring two solutions) 
+        /*
+         * Take a number of copies of the initial solution for using
+         * the crossover operators (or any operator requiring two solutions)
          * */
         if (crossover_heuristics != null) {
             for (int mInx = 5; mInx < 10; mInx++) {
@@ -213,52 +179,53 @@ public class MABHH extends HyperHeuristic {
             }
         }
         /* Set the starting execution time in ms */
-
         lastRestartTimePoint = startTime;
-        //int k = 0;
         startTime = System.currentTimeMillis();
-
+        /* Main loop */
         while (!hasTimeExpired()) {
+            /*Select the low-level heuristic to be applied*/
             lastCalledHeuristic = selection.selectHeuristic();
+            /*Set the parameters of HyFlex with the values of the selected heuristic*/
             problem.setIntensityOfMutation(selection.getLevelOfChangeList()[lastCalledHeuristic]);
             problem.setDepthOfSearch(selection.getLevelOfChangeList()[lastCalledHeuristic]);
 
+            /*Applie the selected low-level heuristics, if it is a crossover the other solution is chosen from the memory*/
             startHeur = System.nanoTime();
             if (isCrossover(lastCalledHeuristic)) {
-                //System.out.println("Enoutr aqui");
                 int slnInxForCrossover = rng.nextInt(5) + 5;
                 newFitness = problem.applyHeuristic(lastCalledHeuristic, 0, slnInxForCrossover, 1);
             } else {
                 newFitness = problem.applyHeuristic(lastCalledHeuristic, 0, 1);
             }
             endHeur = System.nanoTime();
+
+            /*Update the performance elements of the heuristics with the result of the application*/
             currPerfomance.updatePerformanceElements(lastCalledHeuristic, currentFitness, newFitness, bestFitness,
                     startHeur, endHeur);
-            double delta = 0;
 
+            /*Calculate the delta value between the current and new solution*/
+            double delta = 0;
             if (currentFitness == 0 && newFitness < 0) {
                 delta = 0.5;
             }
-
             if (currentFitness < 0 && newFitness == 0) {
                 delta = 0;
             }
-
             if (currentFitness < newFitness) {
                 delta = 0;
             } else if (currentFitness > newFitness) {
                 delta = Math.max(0, ((currentFitness - newFitness) / -currentFitness));
             }
-            // System.out.println("\nNew fitness: " + newFitness);
-            // System.out.println("\nCurrent fitness: " + currentFitness);
-            // System.out.println("Improvement: " + delta + "\n");
+
+            /*Update the rewards values using the methodology of the selection strategy based mainly in the delta value*/
             selection.updateHeuristicValue(delta, lastCalledHeuristic, (int) numberOfHeuristics);
             selection.updateSelectionElements(lastCalledHeuristic, heuristicClassTypeList[lastCalledHeuristic],
                     currentFitness, newFitness,
                     bestFitness, startHeur, endHeur,
                     learningRateMultiplierList, currPerfomance);
             auxC[lastCalledHeuristic]++;
-            //acceptance
+
+            /*Accept the generated solution based on the mechanismn defined*/
             if (acceptance.accept(newFitness, currentFitness, bestFitness)) {
                 problem.copySolution(1, 0);
                 if (newFitness < bestFitness) {
@@ -276,6 +243,7 @@ public class MABHH extends HyperHeuristic {
                 currentFitness = newFitness;
             }
 
+            /*Verify if the phase is over*/
             if (phaseIterCounter == Vars.phaseLength) {
                 /* Check the performance changes of the heuristics and update the related elements */
                 performanceCheckForDHS();
@@ -284,7 +252,7 @@ public class MABHH extends HyperHeuristic {
                 /* Increment the number phases passed counter */
                 numberOfPhasesPassed++;
             }
-
+            /*Used for some acceptances*/
             if (numberOfIterations == 15) {
                 endTime = System.currentTimeMillis() - startTime;
                 //Vars.iterMax = Vars.totalExecutionTime / endTime;
@@ -293,63 +261,59 @@ public class MABHH extends HyperHeuristic {
                 Vars.reduceTemperature = true;
                 acceptance.updateCooling();
             }
+            /* Increment the number of iterations*/
             numberOfIterations++;
             auxNumberIt++;
             /* Increment the phase iteration counter */
             phaseIterCounter++;
-            //currentTime = System.currentTimeMillis() - startTime;
+            /* Increment the number of uses and time of the heuristic*/
             timesUsed[lastCalledHeuristic]++;
             totalTime[lastCalledHeuristic] += (endHeur - startHeur);
             pastHeuristic = lastCalledHeuristic;
-            //System.out.println(problem.getFunctionValue(0) + " " + lastCalledHeuristic + improv);
             currentTime = System.currentTimeMillis() - startTime;
 
-            //break point 1
+            /*First breakpoint print. To disable this set breakpoint1 or 2 variable to false in util/Vars.java*/
             if (currentTime >= Math.round(Vars.totalExecutionTime/3.0) && Vars.breakpoint1) {
                 for (int i = 0; i < numberOfHeuristics; i++) {
-                    System.out.println("Heurísticabp1: " + i + " " + auxC[i] + " " + fmt.format(auxC[i] * 100.0 / auxNumberIt) + "%" );
+                    System.out.println("Heuristic-bp1: " + i + " " + auxC[i] + " " + fmt.format(auxC[i] * 100.0 / auxNumberIt) + "%" );
                     auxC[i] = 0;
                 }
                 auxNumberIt = 0;
                 Vars.breakpoint1 = false;
                 selection.printWindow();
-                System.out.println("Numero de iterações sem melhora: " + acceptance.numberOfIterationsStuck);
+                System.out.println("Number of iterations without improvement: " + acceptance.numberOfIterationsStuck);
                 System.out.println("");
             } //break point 2
             else if (currentTime >= Math.round(Vars.totalExecutionTime/2.0) && Vars.breakpoint2) {
                 for (int i = 0; i < numberOfHeuristics; i++) {
-                    System.out.println("Heurísticabp2: " + i + " " + auxC[i] + " " + fmt.format(auxC[i] * 100.0 / auxNumberIt) + "%");
+                    System.out.println("Heuristic-bp2: " + i + " " + auxC[i] + " " + fmt.format(auxC[i] * 100.0 / auxNumberIt) + "%");
                     auxC[i] = 0;
                 }
                 selection.printWindow();
                 System.out.println("");
+                System.out.println("Number of iterations without improvement: " + acceptance.numberOfIterationsStuck);
                 auxNumberIt = 0;
                 Vars.breakpoint2 = false;
             }
-
         }
-        System.out.println("Número de restarts: " + Vars.numberOfRestarts);
-        System.out.println("Número de iterações executadas: " + numberOfIterations);
-        System.out.println("Ultima iteração onde um ótimo foi encontrado: " + lastIterationBest);
-        //System.out.println("Parâmetros finais para o HyFlex: ");
-        //double x[] = selection.getLevelOfChangeList();
-        System.out.println("Vezes usada: ");
+
+        System.out.println("Number of Iterations: " + numberOfIterations);
+        System.out.println("Last iteration best value: " + lastIterationBest);
+
+        /*Print for each low-level heuristic - id, numberofTimesused, time, number of worst, equal, improv and best movements generated*/
         for (int i = 0; i < numberOfHeuristics; i++) {
-            System.out.println("Heurística: " + i + " " + timesUsed[i] + " " + fmt.format(timesUsed[i] * 100.0 / numberOfIterations) + "% Tempo " 
-                    + TimeUnit.NANOSECONDS.toMillis(totalTime[i]) + "ms worst: " + currPerfomance.getNumberOfWorseningMoves()[i] + " " +  
-                    fmt.format((currPerfomance.getNumberOfWorseningMoves()[i]*100)/timesUsed[i])        + "% equal: " + currPerfomance.getNumberOfEqualMoves()[i] +
+            System.out.println("Heuristic: " + i + "\t" + timesUsed[i] + "\t" + fmt.format(timesUsed[i] * 100.0 / numberOfIterations) + "%\tTempo "
+                    + TimeUnit.NANOSECONDS.toMillis(totalTime[i]) + "ms\tworst: " + currPerfomance.getNumberOfWorseningMoves()[i] + " " +
+                    fmt.format((currPerfomance.getNumberOfWorseningMoves()[i]*100)/timesUsed[i])        + "%\tequal: " + currPerfomance.getNumberOfEqualMoves()[i] +
                     " " + fmt.format((currPerfomance.getNumberOfEqualMoves()[i]*100)/timesUsed[i]) +
-                    "% improv: " + currPerfomance.getNumberOfImprovingMoves()[i] +" "+ fmt.format((currPerfomance.getNumberOfImprovingMoves()[i]*100)/timesUsed[i])
-                    +"% best: " + currPerfomance.getNumberOfImprovingBestMoves()[i] + " " + 
+                    "%\timprov: " + currPerfomance.getNumberOfImprovingMoves()[i] +" "+ fmt.format((currPerfomance.getNumberOfImprovingMoves()[i]*100)/timesUsed[i])
+                    +"%\tbest: " + currPerfomance.getNumberOfImprovingBestMoves()[i] + " " +
                     fmt.format((currPerfomance.getNumberOfImprovingBestMoves()[i]*100)/timesUsed[i]) + "%");
         }
-        // System.out.println();
-        //selection.printWindow();
     }
 
     private void performanceCheckForDHS() {
         updatePerformanceMetricForSelection();
-        Vars.phaseLength = Vars.calculatePhaseLength(numberOfHeuristics);
     }
 
     private void setHeuristicClassType(PerformanceElements performance, int heuristicIndex) {
@@ -467,6 +431,41 @@ public class MABHH extends HyperHeuristic {
     public String toString() {
         // TODO Auto-generated method stub
         return "MABHH";
+    }
+
+    private void setHeuristicTypes(ProblemDomain problem) {
+        local_search_heuristics = problem.getHeuristicsOfType(ProblemDomain.HeuristicType.LOCAL_SEARCH);
+        mutation_heuristics = problem.getHeuristicsOfType(ProblemDomain.HeuristicType.MUTATION);
+        ruin_recreate_heuristics = problem.getHeuristicsOfType(ProblemDomain.HeuristicType.RUIN_RECREATE);
+        crossover_heuristics = problem.getHeuristicsOfType(ProblemDomain.HeuristicType.CROSSOVER);
+
+        for (int i = 0; i < local_search_heuristics.length; i++) {
+            heuristicTypeList[local_search_heuristics[i]] = HeuristicType.LOCAL_SEARCH;
+            heuristicClassTypeList[local_search_heuristics[i]] = HeuristicClassType.ImprovingMoreOrEqual;
+        }
+        for (int i = 0; i < mutation_heuristics.length; i++) {
+            heuristicTypeList[mutation_heuristics[i]] = HeuristicType.MUTATION;
+            heuristicClassTypeList[mutation_heuristics[i]] = HeuristicClassType.ImprovingMoreOrEqual;
+        }
+        for (int i = 0; i < ruin_recreate_heuristics.length; i++) {
+            heuristicTypeList[ruin_recreate_heuristics[i]] = HeuristicType.RUIN_RECREATE;
+            heuristicClassTypeList[ruin_recreate_heuristics[i]] = HeuristicClassType.ImprovingMoreOrEqual;
+        }
+        for (int i = 0; i < crossover_heuristics.length; i++) {
+            heuristicTypeList[crossover_heuristics[i]] = HeuristicType.CROSSOVER;
+            heuristicClassTypeList[crossover_heuristics[i]] = HeuristicClassType.ImprovingMoreOrEqual;
+        }
+    }
+
+    private boolean isCrossover(int heurIndex) {
+        boolean isCrossover = false;
+        for (int cr = 0; cr < crossover_heuristics.length; cr++) {
+            if (crossover_heuristics[cr] == heurIndex) {
+                isCrossover = true;
+                break;
+            }
+        }
+        return isCrossover;
     }
 
 }

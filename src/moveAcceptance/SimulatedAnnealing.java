@@ -13,9 +13,9 @@ import util.Vars;
  * @author asferreira
  */
 public class SimulatedAnnealing extends AcceptanceCriterion {
-    
+
     private double cooling;
-    
+
     public SimulatedAnnealing(Random r) {
         super(r);
     }
@@ -30,7 +30,7 @@ public class SimulatedAnnealing extends AcceptanceCriterion {
                 numberOfIterationsStuck = 0;
                 Vars.isAtStuck = false;
             }
-            
+
         }
         //accept equal
        else if(newFitness == currentFitness){
@@ -39,10 +39,8 @@ public class SimulatedAnnealing extends AcceptanceCriterion {
        }
         //accept with probability
         else{
-            double rnd = r.nextDouble();   
-           // System.out.println("Random: " + rnd);
+            double rnd = r.nextDouble();  
             double a = Math.exp(((currentFitness - newFitness) / currentFitness)/Vars.temperature);
-            //System.out.println("Random: " + rnd + " P: " + a);
             if(rnd < a){
                 acp = true;
             }
@@ -51,14 +49,13 @@ public class SimulatedAnnealing extends AcceptanceCriterion {
             reduceTemperature();
         }
         if(numberOfIterationsStuck == Vars.iterMax){
-           // System.out.println("Resetou!");
             resetCoolingSchedule();
             numberOfIterationsStuck = 0;
             Vars.numberOfRestarts++;
         }
         return acp;
     }
-    
+
     @Override
     public void updateCooling(){
         this.cooling = 1.0 - (1.0/ (double) Vars.iterMax);
@@ -70,9 +67,9 @@ public class SimulatedAnnealing extends AcceptanceCriterion {
             Vars.temperature = 0.0001;
         }
     }
-    
+
     private void resetCoolingSchedule(){
         Vars.temperature = 1;
     }
-    
+
 }

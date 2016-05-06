@@ -36,9 +36,7 @@ public class ExponentialMonteCarlo extends AcceptanceCriterion {
         } //worsen
         else {
             double rnd = r.nextDouble();
-            // System.out.println("Random: " + rnd);
             double a = Math.exp(((currentFitness - newFitness) / currentFitness));
-            //System.out.println("Random: " + rnd + " P: " + a);
             if (rnd < a) {
                 acp = true;
             }
