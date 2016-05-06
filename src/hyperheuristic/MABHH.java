@@ -234,7 +234,21 @@ public class MABHH extends HyperHeuristic {
             endHeur = System.nanoTime();
             currPerfomance.updatePerformanceElements(lastCalledHeuristic, currentFitness, newFitness, bestFitness,
                     startHeur, endHeur);
-            double delta = Math.max(0, ((currentFitness - newFitness) / currentFitness));
+            double delta = 0;
+
+            if (currentFitness == 0 && newFitness < 0) {
+                delta = 0.5;
+            }
+
+            if (currentFitness < 0 && newFitness == 0) {
+                delta = 0;
+            }
+
+            if (currentFitness < newFitness) {
+                delta = 0;
+            } else if (currentFitness > newFitness) {
+                delta = Math.max(0, ((currentFitness - newFitness) / -currentFitness));
+            }
             // System.out.println("\nNew fitness: " + newFitness);
             // System.out.println("\nCurrent fitness: " + currentFitness);
             // System.out.println("Improvement: " + delta + "\n");
